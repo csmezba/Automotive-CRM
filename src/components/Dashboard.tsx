@@ -254,7 +254,7 @@ export default function Dashboard({
                 <YAxis yAxisId="right" orientation="right" stroke="#6366f1" fontSize={10} tickLine={false} axisLine={false} />
                 <Tooltip 
                   contentStyle={{ fontSize: "11px", borderRadius: "12px", background: "#020617", border: "1px solid #1e293b", color: "#e2e8f0" }}
-                  formatter={(value: any, name: string) => [name === "revenue" ? `$${value}` : `${value} jobs`, name === "revenue" ? "Revenue" : "Bookings"]}
+                  formatter={(value: any, name?: any) => [String(name) === "revenue" ? `$${value}` : `${value} jobs`, String(name) === "revenue" ? "Revenue" : "Bookings"]}
                 />
                 <Area yAxisId="left" type="monotone" dataKey="revenue" name="revenue" stroke="#3b82f6" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRevenue)" activeDot={{ r: 6 }} />
                 <Area yAxisId="right" type="monotone" dataKey="bookings" name="bookings" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorBookings)" activeDot={{ r: 5 }} />

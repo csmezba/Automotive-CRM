@@ -1,0 +1,6 @@
+{
+  "name": "Automotive CRM",
+  "description": "An enterprise-grade Automotive CRM & Dealership Operations System designed with high-fidelity glassmorphism, featuring AI diagnostics, vehicle inventory trackers, and service management tools.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

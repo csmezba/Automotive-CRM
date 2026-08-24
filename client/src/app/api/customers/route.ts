@@ -1,7 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readDb, saveDb, logAudit } from "@/lib/db";
 
+const EXPRESS_URL = process.env.EXPRESS_BACKEND_URL || "http://localhost:5000";
+
 export async function GET(req: NextRequest) {
+  try {
+    const url = new URL(req.url);
+    const expressRes = await fetch(`${EXPRESS_URL}/api/customers${url.search}`);
+    if (expressRes.ok) {
+      const data = await expressRes.json();
+      return NextResponse.json(data);
+    }
+  } catch (e) {
+    console.warn("[Next API Proxy] Express fetch failed, falling back to local db:", e);
+  }
+
   const { searchParams } = new URL(req.url);
   const search = searchParams.get("search");
   const group = searchParams.get("group");
@@ -32,6 +45,21 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
+    try {
+      const expressRes = await fetch(`${EXPRESS_URL}/api/customers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (expressRes.ok) {
+        const data = await expressRes.json();
+        return NextResponse.json(data, { status: 201 });
+      }
+    } catch (e) {
+      console.warn("[Next API Proxy] Express POST failed, falling back:", e);
+    }
+
     const db = readDb();
     const newCust = {
       id: `CUST-${Date.now()}`,

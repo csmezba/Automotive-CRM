@@ -19,6 +19,7 @@ export interface DbSchema {
 }
 
 const DB_FILE = path.join(process.cwd(), "db.json");
+const EXPRESS_SERVER_URL = process.env.EXPRESS_BACKEND_URL || "http://localhost:5000";
 
 const defaultSettings = {
   companyName: "Apex Auto Care",
@@ -315,15 +316,12 @@ export function generateSeedData(): DbSchema {
       estimatedTimeHours: 2.5,
       pickupRequired: false,
       dropRequired: true,
-      customerNotes: "Annual tire rotation and HEPA filter swap. Check high voltage wiring loom insulation state.",
-      mechanicNotes: "Rotated tires in diagonal pattern. Installed OEM active-carbon HEPA cabin filter set. Inspected high voltage cables - no sign of damage or wear.",
+      customerNotes: "Annual tire rotation and HEPA filter swap.",
+      mechanicNotes: "Rotated tires in diagonal pattern. Installed OEM active-carbon HEPA cabin filter set.",
       checklist: [
         { id: "ck-1", item: "Diagonal tire rotation and balance", checked: true },
-        { id: "ck-2", item: "Tesla HEPA cabin filter replace", checked: true },
-        { id: "ck-3", item: "HV loom insulation wear report", checked: true },
-        { id: "ck-4", item: "Supercharger port connector cleanup", checked: true }
+        { id: "ck-2", item: "Tesla HEPA cabin filter replace", checked: true }
       ],
-      digitalSignature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABaCAYAAAA66Gf3AAAAbklEQVR42u3BAQ0AAADCoPdPbQ43oAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgBlU1AAEl1u0fAAAAAElFTkSuQmCC",
       invoiceId: "INV-2026-001",
       beforeImages: [],
       afterImages: []
@@ -344,7 +342,7 @@ export function generateSeedData(): DbSchema {
   ];
 
   const claims = [
-    { id: "CLM-001", warrantyId: "WR-1", customerName: "Samantha Reed", vehicleName: "Honda Accord", description: "Brake rotor warp covered under custom bumper-to-bumper extended policy.", status: "Approved", estimatedCost: 240.00, createdAt: "2026-07-18T09:40:00Z" }
+    { id: "CLM-001", warrantyId: "WR-1", customerName: "Samantha Reed", vehicleName: "Honda Accord", description: "Brake rotor warp covered under custom policy.", status: "Approved", estimatedCost: 240.0, createdAt: "2026-07-18T09:40:00Z" }
   ];
 
   const invoices = [
@@ -357,8 +355,7 @@ export function generateSeedData(): DbSchema {
       vehicleName: "Tesla Model 3 (EV-NXT)",
       items: [
         { description: "Tesla HEPA cabin filter replace", quantity: 1, unitPrice: 45.0, type: "Part" },
-        { description: "Specialized EV inspection and tire rotation labor", quantity: 2, unitPrice: 110.0, type: "Labor" },
-        { description: "EV battery health cell diagnostic scan", quantity: 1, unitPrice: 50.0, type: "Labor" }
+        { description: "Specialized EV inspection and tire rotation labor", quantity: 2, unitPrice: 110.0, type: "Labor" }
       ],
       subtotal: 315.0,
       taxRate: 0.15,
@@ -380,13 +377,11 @@ export function generateSeedData(): DbSchema {
 
   const notifications = [
     { id: "NTF-1", title: "Low Stock Alert", message: "HEPA Filter stock (3) has fallen below minimum threshold (5).", type: "stock", createdAt: "2026-07-18T01:10:00Z", read: false },
-    { id: "NTF-2", title: "Booking Created", message: "New Brake Service booked for Honda Accord (Samantha Reed).", type: "booking", createdAt: "2026-07-18T04:20:00Z", read: false },
-    { id: "NTF-3", title: "Payment Received", message: "Invoice INV-2026-001 total of $327.25 paid successfully via Apple Pay.", type: "payment", createdAt: "2026-07-16T16:32:00Z", read: true }
+    { id: "NTF-2", title: "Booking Created", message: "New Brake Service booked for Honda Accord (Samantha Reed).", type: "booking", createdAt: "2026-07-18T04:20:00Z", read: false }
   ];
 
   const auditLogs = [
-    { id: "AUD-1", userId: "USR-3", userName: "Kenji Sato", role: "Service Advisor", action: "Created Booking", target: "BK-101", timestamp: "2026-07-18T04:20:00Z", ipAddress: "192.168.1.115" },
-    { id: "AUD-2", userId: "USR-2", userName: "Elena Rostova", role: "Manager", action: "Approved Parts Inventory Adjustment", target: "PART-3", timestamp: "2026-07-17T11:45:00Z", ipAddress: "192.168.1.102" }
+    { id: "AUD-1", userId: "USR-3", userName: "Kenji Sato", role: "Service Advisor", action: "Created Booking", target: "BK-101", timestamp: "2026-07-18T04:20:00Z", ipAddress: "192.168.1.115" }
   ];
 
   return {
@@ -405,6 +400,35 @@ export function generateSeedData(): DbSchema {
     auditLogs,
     settings: defaultSettings,
   };
+}
+
+// Fetch database records from Express MongoDB backend
+export async function readDbFromExpress(): Promise<DbSchema> {
+  try {
+    const res = await fetch(`${EXPRESS_SERVER_URL}/api/dashboard/stats`);
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        users: data.users || [],
+        branches: data.branches || [],
+        customers: data.customers || [],
+        vehicles: data.vehicles || [],
+        bookings: data.bookings || [],
+        parts: data.parts || [],
+        mechanics: data.mechanics || [],
+        warranties: data.policies || [],
+        claims: data.claims || [],
+        invoices: data.invoices || [],
+        reminders: data.reminders || [],
+        notifications: data.notifications || [],
+        auditLogs: data.auditLogs || [],
+        settings: data.settings || defaultSettings,
+      };
+    }
+  } catch (e) {
+    console.warn("Express backend fetch failed, falling back to local storage file:", e);
+  }
+  return readDb();
 }
 
 export function readDb(): DbSchema {

@@ -1,7 +1,19 @@
 import { NextResponse } from "next/server";
 import { readDb } from "@/lib/db";
 
+const EXPRESS_URL = process.env.EXPRESS_BACKEND_URL || "http://localhost:5000";
+
 export async function GET() {
+  try {
+    const expressRes = await fetch(`${EXPRESS_URL}/api/dashboard/stats`);
+    if (expressRes.ok) {
+      const data = await expressRes.json();
+      return NextResponse.json(data);
+    }
+  } catch (e) {
+    console.warn("[Next API Proxy] Express fetch failed, falling back to local file:", e);
+  }
+
   const db = readDb();
   const todayDate = "2026-07-18";
 

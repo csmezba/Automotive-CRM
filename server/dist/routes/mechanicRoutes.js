@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const mechanicController_js_1 = require("../controllers/mechanicController.js");
+const router = (0, express_1.Router)();
+router.get("/", mechanicController_js_1.getMechanics);
+router.get("/:id", mechanicController_js_1.getMechanicById);
+router.post("/", mechanicController_js_1.createMechanic);
+router.put("/:id", mechanicController_js_1.updateMechanic);
+router.delete("/:id", mechanicController_js_1.deleteMechanic);
+exports.default = router;

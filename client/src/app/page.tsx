@@ -61,30 +61,31 @@ export default function Home() {
   const [showNotifications, setShowNotifications] = useState(false);
 
   // Fetch initial database structures from Next.js API Route Handler
-  useEffect(() => {
-    async function loadAllData() {
-      try {
-        const res = await fetch("/api/dashboard/stats");
-        if (res.ok) {
-          const data = await res.json();
-          setCustomers(data.customers || []);
-          setVehicles(data.vehicles || []);
-          setBookings(data.bookings || []);
-          setParts(data.parts || []);
-          setPolicies(data.policies || []);
-          setInvoices(data.invoices || []);
-          setMechanics(data.mechanics || []);
-          setStats(data.stats || null);
-        } else {
-          loadMockData();
-        }
-      } catch (err) {
-        console.warn("API route fallback", err);
-        loadMockData();
+  const loadAllData = async () => {
+    try {
+      const res = await fetch("/api/dashboard/stats");
+      if (res.ok) {
+        const data = await res.json();
+        setCustomers(data.customers || []);
+        setVehicles(data.vehicles || []);
+        setBookings(data.bookings || []);
+        setParts(data.parts || []);
+        setPolicies(data.policies || []);
+        setInvoices(data.invoices || []);
+        setMechanics(data.mechanics || []);
+        setStats(data.stats || null);
+      } else {
+        console.error("Failed to load dashboard data from backend.");
       }
+    } catch (err) {
+      console.error("Backend fetch error:", err);
     }
+  };
+
+  useEffect(() => {
     loadAllData();
   }, []);
+
 
   const loadMockData = () => {
     const mockCustomers: Customer[] = [
@@ -315,6 +316,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newCust)
       });
+      await loadAllData();
     } catch (e) {
       console.warn("Backend Sync error", e);
     }
@@ -328,6 +330,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedFields)
       });
+      await loadAllData();
     } catch (e) {
       console.warn("Backend Sync error", e);
     }
@@ -337,6 +340,7 @@ export default function Home() {
     setCustomers(customers.filter(c => c.id !== id));
     try {
       await fetch(`/api/customers/${id}`, { method: "DELETE" });
+      await loadAllData();
     } catch (e) {
       console.warn("Backend Sync error", e);
     }
@@ -357,6 +361,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newVeh)
       });
+      await loadAllData();
     } catch (e) {
       console.warn("Backend Sync error", e);
     }
@@ -370,6 +375,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedFields)
       });
+      await loadAllData();
     } catch (e) {
       console.warn("Backend Sync error", e);
     }
@@ -379,6 +385,7 @@ export default function Home() {
     setVehicles(vehicles.filter(v => v.id !== id));
     try {
       await fetch(`/api/vehicles/${id}`, { method: "DELETE" });
+      await loadAllData();
     } catch (e) {
       console.warn("Backend Sync error", e);
     }
@@ -398,6 +405,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newB)
       });
+      await loadAllData();
     } catch (e) {
       console.warn("Backend Sync error", e);
     }
@@ -411,6 +419,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updated)
       });
+      await loadAllData();
     } catch (e) {
       console.warn("Backend Sync error", e);
     }
@@ -420,6 +429,7 @@ export default function Home() {
     setBookings(bookings.filter(b => b.id !== id));
     try {
       await fetch(`/api/bookings/${id}`, { method: "DELETE" });
+      await loadAllData();
     } catch (e) {
       console.warn("Backend Sync error", e);
     }
@@ -438,6 +448,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newP)
       });
+      await loadAllData();
     } catch (e) {
       console.warn("Backend Sync error", e);
     }
@@ -451,6 +462,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedFields)
       });
+      await loadAllData();
     } catch (e) {
       console.warn("Backend Sync error", e);
     }
@@ -463,6 +475,16 @@ export default function Home() {
     };
 
     setPolicies([newP, ...policies]);
+    try {
+      await fetch("/api/warranties", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newP)
+      });
+      await loadAllData();
+    } catch (e) {
+      console.warn("Backend Sync error", e);
+    }
   };
 
   const handleAddClaim = async (policyId: string, claim: any) => {
@@ -471,6 +493,16 @@ export default function Home() {
       { id: `CLM-${Date.now()}`, ...claim }
     ];
     setPolicies(policies.map(p => p.id === policyId ? { ...p, claims: newClaims } : p));
+    try {
+      await fetch("/api/warranties", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ policyId, claim })
+      });
+      await loadAllData();
+    } catch (e) {
+      console.warn("Backend Sync error", e);
+    }
   };
 
   const handleAddInvoice = async (inv: any) => {
@@ -486,6 +518,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newInv)
       });
+      await loadAllData();
     } catch (e) {
       console.warn("Backend Sync error", e);
     }
@@ -499,6 +532,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedFields)
       });
+      await loadAllData();
     } catch (e) {
       console.warn("Backend Sync error", e);
     }

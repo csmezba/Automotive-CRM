@@ -1,33 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readDb, saveDb } from "@/lib/db";
+
+const EXPRESS_URL = process.env.EXPRESS_BACKEND_URL || "http://localhost:5000";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const body = await req.json();
-    const db = readDb();
-    const idx = db.vehicles.findIndex((v: any) => v.id === id);
-
-    if (idx !== -1) {
-      db.vehicles[idx] = { ...db.vehicles[idx], ...body };
-      saveDb(db);
-      return NextResponse.json(db.vehicles[idx]);
+    const expressRes = await fetch(`${EXPRESS_URL}/api/vehicles/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (expressRes.ok) {
+      const data = await expressRes.json();
+      return NextResponse.json(data);
     }
-
-    return NextResponse.json({ message: "Vehicle not found" }, { status: 404 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const errData = await expressRes.json().catch(() => ({}));
+    return NextResponse.json(errData, { status: expressRes.status });
+  } catch (e: any) {
+    return NextResponse.json({ error: `Backend connection error: ${e.message}` }, { status: 502 });
   }
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const db = readDb();
-    db.vehicles = db.vehicles.filter((v: any) => v.id !== id);
-    saveDb(db);
-    return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const expressRes = await fetch(`${EXPRESS_URL}/api/vehicles/${id}`, {
+      method: "DELETE",
+    });
+    if (expressRes.ok) {
+      const data = await expressRes.json();
+      return NextResponse.json(data);
+    }
+    return NextResponse.json({ error: "Failed to delete vehicle" }, { status: expressRes.status });
+  } catch (e: any) {
+    return NextResponse.json({ error: `Backend connection error: ${e.message}` }, { status: 502 });
   }
 }

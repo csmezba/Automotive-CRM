@@ -1,66 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readDb, saveDb, logAudit } from "@/lib/db";
 
-export async function GET() {
-  const db = readDb();
-  return NextResponse.json(db.bookings);
+const EXPRESS_URL = process.env.EXPRESS_BACKEND_URL || "http://localhost:5000";
+
+export async function GET(req: NextRequest) {
+  try {
+    const url = new URL(req.url);
+    const expressRes = await fetch(`${EXPRESS_URL}/api/bookings${url.search}`, { cache: "no-store" });
+    if (expressRes.ok) {
+      const data = await expressRes.json();
+      return NextResponse.json(data);
+    }
+    return NextResponse.json({ error: "Failed to fetch bookings from Express" }, { status: expressRes.status });
+  } catch (e: any) {
+    return NextResponse.json({ error: `Backend connection error: ${e.message}` }, { status: 502 });
+  }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const db = readDb();
-    const newBooking = {
-      id: `BK-${100 + db.bookings.length + 1}`,
-      customerId: body.customerId,
-      customerName: body.customerName || "Customer",
-      customerPhone: body.customerPhone || "Unlisted",
-      vehicleId: body.vehicleId,
-      vehicleName: body.vehicleName || "Vehicle",
-      licensePlate: body.licensePlate || "",
-      mechanicId: body.mechanicId || undefined,
-      mechanicName: body.mechanicName || undefined,
-      serviceType: body.serviceType || "Oil Change",
-      bookingDate: body.bookingDate || new Date().toISOString().split("T")[0],
-      bookingTime: body.bookingTime || "09:00",
-      status: body.status || "Pending",
-      estimatedCost: Number(body.estimatedCost) || 150.0,
-      estimatedTimeHours: Number(body.estimatedTimeHours) || 2,
-      pickupRequired: !!body.pickupRequired,
-      dropRequired: !!body.dropRequired,
-      checklist: body.checklist || [
-        { id: "ck-1", item: "Safety visual inspect", checked: false },
-        { id: "ck-2", item: "Fluid top-offs", checked: false },
-        { id: "ck-3", item: "Battery health scan", checked: false }
-      ],
-      customerNotes: body.customerNotes || "",
-      mechanicNotes: body.mechanicNotes || "",
-      beforeImages: body.beforeImages || [],
-      afterImages: body.afterImages || [],
-    };
-
-    db.bookings.unshift(newBooking);
-
-    // Sync vehicle status
-    const vIdx = db.vehicles.findIndex((v: any) => v.id === newBooking.vehicleId);
-    if (vIdx !== -1) {
-      db.vehicles[vIdx].status = "In Service";
-    }
-
-    // Trigger notification
-    db.notifications.unshift({
-      id: `NTF-${Date.now()}`,
-      title: "New Booking Added",
-      message: `${newBooking.customerName} scheduled ${newBooking.serviceType} for ${newBooking.bookingDate}.`,
-      type: "booking",
-      createdAt: new Date().toISOString(),
-      read: false,
+    const expressRes = await fetch(`${EXPRESS_URL}/api/bookings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
-
-    saveDb(db);
-    logAudit("Create Booking", `Booking ${newBooking.id} added`, { id: "USR-3", name: "Kenji Sato", role: "Service Advisor" });
-    return NextResponse.json(newBooking, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (expressRes.ok) {
+      const data = await expressRes.json();
+      return NextResponse.json(data, { status: 201 });
+    }
+    const errData = await expressRes.json().catch(() => ({}));
+    return NextResponse.json(errData, { status: expressRes.status });
+  } catch (e: any) {
+    return NextResponse.json({ error: `Backend connection error: ${e.message}` }, { status: 502 });
   }
 }

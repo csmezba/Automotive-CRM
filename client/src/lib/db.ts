@@ -19,7 +19,7 @@ export interface DbSchema {
 }
 
 const DB_FILE = path.join(process.cwd(), "db.json");
-const EXPRESS_SERVER_URL = process.env.EXPRESS_BACKEND_URL || "http://localhost:5000";
+const EXPRESS_SERVER_URL = process.env.NEXT_PUBLIC_API_URL || process.env.EXPRESS_BACKEND_URL || "http://localhost:5000";
 
 const defaultSettings = {
   companyName: "Apex Auto Care",

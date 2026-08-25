@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const EXPRESS_URL = process.env.EXPRESS_BACKEND_URL || "http://localhost:5000";
+const EXPRESS_URL = process.env.NEXT_PUBLIC_API_URL || process.env.EXPRESS_BACKEND_URL || "http://localhost:5000";
 
 export async function GET() {
   try {
